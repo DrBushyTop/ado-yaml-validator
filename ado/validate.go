@@ -120,7 +120,7 @@ func (c ValidationClient) callPreviewApi(ctx context.Context, args previewPipeli
 	if marshalErr != nil {
 		return nil, marshalErr
 	}
-	locationId, _ := uuid.Parse("7859261e-d2e9-4a68-b820-a5d84cc5bb3d")
+	locationId, _ := uuid.Parse("53df2d18-29ea-46a9-bee0-933540f80abf")
 	resp, err := c.pipelineClient.Client.Send(ctx, http.MethodPost, locationId, "7.0", routeValues, queryParams, bytes.NewReader(body), "application/json", "application/json", nil)
 	if err != nil {
 		return nil, err
