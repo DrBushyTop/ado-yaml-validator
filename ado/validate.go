@@ -15,12 +15,12 @@ import (
 )
 
 type ValidationClient struct {
-	environment    AzureDevOpsEnvironment
+	environment    *AzureDevOpsEnvironment
 	pipelineClient *pipelines.ClientImpl
 	targetBranch   string
 }
 
-func NewValidationClient(ctx context.Context, environment AzureDevOpsEnvironment) *ValidationClient {
+func NewValidationClient(ctx context.Context, environment *AzureDevOpsEnvironment) *ValidationClient {
 	pClient := environment.connection.GetClientByUrl(environment.connection.BaseUrl)
 
 	return &ValidationClient{
@@ -34,8 +34,8 @@ type ValidationResult struct {
 	err          error
 }
 
-// ValidatePR validates a single pipeline with the given ID
-func (c ValidationClient) ValidatePR(ctx context.Context, pipeline Pipeline) (ValidationResult, error) {
+// ValidatePipelineInPR validates a single pipeline with the given ID
+func (c ValidationClient) ValidatePipelineInPR(ctx context.Context, pipeline Pipeline) (ValidationResult, error) {
 	args := c.newPreviewPipelineArgs(pipeline.Id)
 
 	// TODO: handle error in case where call does not go through
@@ -56,9 +56,13 @@ type Pipeline struct {
 }
 
 // ValidateAllPrChanges validates all pipelines that have changed in the given pull request
-func (c ValidationClient) ValidateAllPrChanges(ctx context.Context, pullRequestId int) []error {
+func (c ValidationClient) ValidateAllPrChanges(ctx context.Context) []error {
 	errs := make([]error, 0)
-	changes, err := c.getPullRequestChangedYamlFiles(pullRequestId)
+	if c.environment.pullRequestId == 0 {
+		return append(errs, fmt.Errorf("ValidateAllChanges: pull request ID is not set"))
+	}
+
+	changes, err := c.getPullRequestChangedYamlFiles(c.environment.pullRequestId)
 	if err != nil {
 		return append(errs, fmt.Errorf("ValidateAllChanges: failed to get changed files: %w", err))
 	}
@@ -70,7 +74,7 @@ func (c ValidationClient) ValidateAllPrChanges(ctx context.Context, pullRequestI
 	results := make(chan ValidationResult)
 	for i := range changedPipelines {
 		go func(pipeline Pipeline) {
-			result, err := c.ValidatePR(ctx, pipeline)
+			result, err := c.ValidatePipelineInPR(ctx, pipeline)
 			if err != nil {
 				log.Printf("ValidateAllChanges: failed to validate pipeline %s: %v", pipeline, err)
 			}

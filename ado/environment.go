@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/microsoft/azure-devops-go-api/azuredevops"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -28,6 +29,7 @@ type AzureDevOpsEnvironment struct {
 	connection      *azuredevops.Connection
 	runBranch       string
 	repositoryId    string
+	pullRequestId   int
 }
 
 func NewAzureDevOpsEnvironment(conn *azuredevops.Connection, opts ...EnvOption) (*AzureDevOpsEnvironment, error) {
@@ -66,10 +68,16 @@ func WithPrEnv() EnvOption {
 			return fmt.Errorf("WithPrEnv: failed to retrieve repository ID from environment variables")
 		}
 
+		pullRequestId, err := strconv.Atoi(os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTID"))
+		if err != nil {
+			return fmt.Errorf("WithPrEnv: failed to retrieve pull request ID from environment variables. %w", err)
+		}
+
 		env.organizationUrl = orgUrl
 		env.project = project
 		env.runBranch = runBranch
 		env.repositoryId = repositoryId
+		env.pullRequestId = pullRequestId
 
 		return nil
 	}
