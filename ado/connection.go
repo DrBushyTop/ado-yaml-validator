@@ -26,6 +26,8 @@ type AzureDevOpsEnvironment struct {
 	organizationUrl string
 	project         string
 	connection      *azuredevops.Connection
+	runBranch       string
+	repositoryId    string
 }
 
 func NewAzureDevOpsEnvironment(conn *azuredevops.Connection, opts ...EnvOption) (*AzureDevOpsEnvironment, error) {
@@ -49,15 +51,25 @@ func WithPrEnv() EnvOption {
 	return func(env *AzureDevOpsEnvironment) error {
 		orgUrl := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI")
 		if orgUrl == "" {
-			return fmt.Errorf("getInstanceInfo: failed to retrieve organization URL from environment variables")
+			return fmt.Errorf("WithPrEnv: failed to retrieve organization URL from environment variables")
 		}
 		project := os.Getenv("SYSTEM_TEAMPROJECT")
 		if project == "" {
-			return fmt.Errorf("getInstanceInfo: failed to retrieve project name from environment variables")
+			return fmt.Errorf("WithPrEnv: failed to retrieve project name from environment variables")
+		}
+		runBranch := os.Getenv("BUILD_SOURCEBRANCH")
+		if runBranch == "" {
+			return fmt.Errorf("WithPrEnv: failed to retrieve run branch from environment variables")
+		}
+		repositoryId := os.Getenv("BUILD_REPOSITORY_ID")
+		if repositoryId == "" {
+			return fmt.Errorf("WithPrEnv: failed to retrieve repository ID from environment variables")
 		}
 
 		env.organizationUrl = orgUrl
 		env.project = project
+		env.runBranch = runBranch
+		env.repositoryId = repositoryId
 
 		return nil
 	}

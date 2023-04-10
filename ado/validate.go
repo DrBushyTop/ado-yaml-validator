@@ -17,6 +17,7 @@ import (
 type ValidationClient struct {
 	environment    AzureDevOpsEnvironment
 	pipelineClient *pipelines.ClientImpl
+	targetBranch   string
 }
 
 func NewValidationClient(ctx context.Context, environment AzureDevOpsEnvironment) *ValidationClient {
@@ -33,28 +34,43 @@ type ValidationResult struct {
 	err          error
 }
 
-// Validate validates a single pipeline file
-func (c ValidationClient) Validate(ctx context.Context, pipelineFilePath string) (ValidationResult, error) {
-	return ValidationResult{}, nil
+// ValidatePR validates a single pipeline with the given ID
+func (c ValidationClient) ValidatePR(ctx context.Context, pipeline Pipeline) (ValidationResult, error) {
+	args := c.newPreviewPipelineArgs(pipeline.Id)
+
+	// TODO: handle error in case where call does not go through
+	_, err := c.callPreviewApi(ctx, args)
+	result := ValidationResult{
+		pipelinePath: pipeline.FilePath,
+	}
+	if err != nil {
+		result.err = err
+	}
+
+	return result, nil
 }
 
-// GetChangedPipelines returns a list of pipelines that have changed in the given pull request
-func (c ValidationClient) GetChangedPipelines(ctx context.Context, pullRequestId int) ([]string, error) {
-	return nil, nil
+type Pipeline struct {
+	FilePath string
+	Id       int
 }
 
-// ValidateAllChanges validates all pipelines that have changed in the given pull request
-func (c ValidationClient) ValidateAllChanges(ctx context.Context, pullRequestId int) []error {
+// ValidateAllPrChanges validates all pipelines that have changed in the given pull request
+func (c ValidationClient) ValidateAllPrChanges(ctx context.Context, pullRequestId int) []error {
 	errs := make([]error, 0)
-	changed, err := c.GetChangedPipelines(ctx, pullRequestId)
+	changes, err := c.getPullRequestChangedYamlFiles(pullRequestId)
+	if err != nil {
+		return append(errs, fmt.Errorf("ValidateAllChanges: failed to get changed files: %w", err))
+	}
+	changedPipelines, err := c.getChangedPipelines(ctx, changes)
 	if err != nil {
 		return append(errs, fmt.Errorf("ValidateAllChanges: failed to get changed pipelines: %w", err))
 	}
 
 	results := make(chan ValidationResult)
-	for i := range changed {
-		go func(pipeline string) {
-			result, err := c.Validate(ctx, pipeline)
+	for i := range changedPipelines {
+		go func(pipeline Pipeline) {
+			result, err := c.ValidatePR(ctx, pipeline)
 			if err != nil {
 				log.Printf("ValidateAllChanges: failed to validate pipeline %s: %v", pipeline, err)
 			}
@@ -68,7 +84,7 @@ func (c ValidationClient) ValidateAllChanges(ctx context.Context, pullRequestId 
 				}
 			}
 
-		}(changed[i])
+		}(changedPipelines[i])
 	}
 
 	for result := range results {
@@ -85,8 +101,9 @@ func (c ValidationClient) ValidateAllChanges(ctx context.Context, pullRequestId 
 
 // previewParameters are the Body parameters for the Preview call: https://learn.microsoft.com/en-us/rest/api/azure/devops/pipelines/preview/preview?view=azure-devops-rest-7.0#request-body
 type previewParameters struct {
-	previewRun   bool
-	yamlOverride string
+	resources    *pipelines.RunResourcesParameters
+	previewRun   *bool
+	yamlOverride *string
 }
 
 // Arguments for the callValidationApi function
@@ -101,7 +118,47 @@ type previewPipelineArgs struct {
 	PipelineVersion *int
 }
 
-func (c ValidationClient) callPreviewApi(ctx context.Context, args previewPipelineArgs) (*pipelines.Run, error) {
+func (c ValidationClient) newPreviewPipelineArgs(pipelineId int, opts ...previewPipelineArgOpt) previewPipelineArgs {
+	repoMap := make(map[string]pipelines.RepositoryResourceParameters)
+	repoMap["self"] = pipelines.RepositoryResourceParameters{
+		RefName: Pointer(c.environment.runBranch),
+	}
+
+	runResourceParams := pipelines.RunResourcesParameters{
+		Repositories: &repoMap,
+	}
+
+	previewParams := previewParameters{
+		resources:  &runResourceParams,
+		previewRun: Pointer(true),
+	}
+
+	args := previewPipelineArgs{
+		PipelineId:        Pointer(pipelineId),
+		PreviewParameters: &previewParams,
+		Project:           Pointer(c.environment.project),
+	}
+
+	for _, opt := range opts {
+		opt(&args)
+	}
+
+	return args
+}
+
+type previewPipelineArgOpt func(*previewPipelineArgs)
+
+func withYamlOverride(yamlOverride string) previewPipelineArgOpt {
+	return func(args *previewPipelineArgs) {
+		args.PreviewParameters.yamlOverride = Pointer(yamlOverride)
+	}
+}
+
+type PreviewRun struct {
+	FinalYaml *string `json:"finalYaml,omitempty"`
+}
+
+func (c ValidationClient) callPreviewApi(ctx context.Context, args previewPipelineArgs) (*PreviewRun, error) {
 	routeValues := make(map[string]string)
 	if args.Project == nil || *args.Project == "" {
 		return nil, &azuredevops.ArgumentNilOrEmptyError{ArgumentName: "args.Project"}
@@ -126,7 +183,21 @@ func (c ValidationClient) callPreviewApi(ctx context.Context, args previewPipeli
 		return nil, err
 	}
 
-	var responseValue pipelines.Run
+	var responseValue PreviewRun
 	err = c.pipelineClient.Client.UnmarshalBody(resp, &responseValue)
 	return &responseValue, err
 }
+
+// PR Case:
+// Get project, organization, PR branch? (merge/something) from PR
+// Get changed .yaml files from PR
+// Get all pipelines in project, filter for pipelines that directly use those yaml files OR use the file as a template
+// for each file, call the validation api.
+// As this is a PR, we do not need to overwrite the yaml, as the changes are already in the repository.
+
+// Local Case:
+// Take in project, organization, branch, auth token, branch to compare to (defaulting to master) from user
+// Get changed .yaml files from git diff?
+// Get all pipelines in project, filter for pipelines that directly use those yaml files (Later: OR use the file as a template)
+// If no pipelines are found (this file is a template), just select the first one returned for the validation call (we override the contents)
+// for each file, call the validation api, using the yamloverride by parsing local yaml.
