@@ -20,12 +20,23 @@ type ValidationClient struct {
 	targetBranch   string
 }
 
-func NewValidationClient(ctx context.Context, environment *AzureDevOpsEnvironment) *ValidationClient {
+func NewValidationClient(ctx context.Context, environment *AzureDevOpsEnvironment, opts ...ValidationClientOpt) *ValidationClient {
 	pClient := environment.connection.GetClientByUrl(environment.connection.BaseUrl)
 
-	return &ValidationClient{
+	valClient := ValidationClient{
 		environment:    environment,
 		pipelineClient: &pipelines.ClientImpl{Client: *pClient},
+	}
+
+	return &valClient
+}
+
+type ValidationClientOpt func(*ValidationClient) error
+
+func WithPipelineClient(client *azuredevops.Client) ValidationClientOpt {
+	return func(c *ValidationClient) error {
+		c.pipelineClient = &pipelines.ClientImpl{Client: *client}
+		return nil
 	}
 }
 
@@ -34,8 +45,8 @@ type ValidationResult struct {
 	err          error
 }
 
-// ValidatePipelineInPR validates a single pipeline with the given ID
-func (c ValidationClient) ValidatePipelineInPR(ctx context.Context, pipeline Pipeline) (ValidationResult, error) {
+// validatePipelineInPR validates a single pipeline with the given ID
+func (c ValidationClient) validatePipelineInPR(ctx context.Context, pipeline Pipeline) (ValidationResult, error) {
 	args := c.newPreviewPipelineArgs(pipeline.Id)
 
 	// TODO: handle error in case where call does not go through
@@ -74,7 +85,7 @@ func (c ValidationClient) ValidateAllPrChanges(ctx context.Context) []error {
 	results := make(chan ValidationResult)
 	for i := range changedPipelines {
 		go func(pipeline Pipeline) {
-			result, err := c.ValidatePipelineInPR(ctx, pipeline)
+			result, err := c.validatePipelineInPR(ctx, pipeline)
 			if err != nil {
 				log.Printf("ValidateAllChanges: failed to validate pipeline %s: %v", pipeline, err)
 			}
