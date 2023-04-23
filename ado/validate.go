@@ -209,10 +209,3 @@ func (c ValidationClient) callPreviewApi(ctx context.Context, args previewPipeli
 // Get all pipelines in project, filter for pipelines that directly use those yaml files OR use the file as a template
 // for each file, call the validation api.
 // As this is a PR, we do not need to overwrite the yaml, as the changes are already in the repository.
-
-// Local Case:
-// Take in project, organization, branch, auth token, branch to compare to (defaulting to master) from user
-// Get changed .yaml files from git diff?
-// Get all pipelines in project, filter for pipelines that directly use those yaml files (Later: OR use the file as a template)
-// If no pipelines are found (this file is a template), just select the first one returned for the validation call (we override the contents)
-// for each file, call the validation api, using the yamloverride by parsing local yaml.

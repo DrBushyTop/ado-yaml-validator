@@ -6,7 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="9ae48026-19c5-4bf2-8c3a-c5f3d8a2c344" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ado/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/ado/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ado/validate.go" beforeDir="false" afterPath="$PROJECT_DIR$/ado/validate.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/root.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/root.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,12 +25,13 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file:///opt/homebrew/Cellar/go/1.20.2/libexec" />
+  <component name="GOROOT" url="file:///opt/homebrew/Cellar/go/1.20.3/libexec" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$USER_HOME$/go/pkg/mod/github.com/microsoft/azure-devops-go-api/azuredevops@v1.0.0-b5/client.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/microsoft/azure-devops-go-api/azuredevops@v1.0.0-b5/git/models.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/github.com/microsoft/azure-devops-go-api/azuredevops@v1.0.0-b5/models.go" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -50,7 +56,7 @@
     "last_opened_file_path": "/Users/pasi/Code/Omat/ado-yaml-validator",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -58,6 +64,22 @@
       <recent name="$PROJECT_DIR$/adowrappers" />
       <recent name="$PROJECT_DIR$/cmd" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="go build github.com/drbushytop/ado-yaml-validator" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="ado-yaml-validator" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/drbushytop/ado-yaml-validator" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Build.go build github.com/drbushytop/ado-yaml-validator" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
@@ -73,6 +95,11 @@
           <url>file://$PROJECT_DIR$/ado/changes.go</url>
           <line>70</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/cmd/root.go</url>
+          <line>122</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

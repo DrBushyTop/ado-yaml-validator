@@ -71,7 +71,7 @@ func NewAzureDevOpsEnvironmentFromPR() (*AzureDevOpsEnvironment, error) {
 		return nil, fmt.Errorf("WithPrEnv: failed to retrieve access token from environment variables")
 	}
 
-	conn := azuredevops.NewPatConnection(orgUri, token)
+	conn := NewOauthConnection(orgUri, token)
 
 	orgUrl := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI")
 	if orgUrl == "" {
